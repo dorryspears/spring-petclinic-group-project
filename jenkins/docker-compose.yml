@@ -1,0 +1,67 @@
+services:
+  jenkins:
+    image: my-jenkins
+    container_name: jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - jenkins-data:/jenkins-data
+      - jenkins-docker-certs:/certs/client
+    networks:
+      - network
+
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - network
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+    networks:
+      - network
+
+  sonarqube:
+    image: sonarqube:10.6-community
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    networks:
+      - network
+
+volumes:
+  grafana-storage:
+    external: true
+  jenkins_home:
+    external: true
+  jenkins-data:
+    external: true
+  jenkins-docker-certs:
+    external: true
+  prometheus-data:
+    external: true
+  sonarqube_data:
+    external: true
+  sonarqube_logs:
+    external: true
+  sonarqube_extensions:
+    external: true
+
+networks:
+  network:
+    external: false
