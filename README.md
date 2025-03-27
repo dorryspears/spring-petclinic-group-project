@@ -1,163 +1,276 @@
-# Spring PetClinic Sample Application [![Build Status](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml/badge.svg)](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml)[![Build Status](https://github.com/spring-projects/spring-petclinic/actions/workflows/gradle-build.yml/badge.svg)](https://github.com/spring-projects/spring-petclinic/actions/workflows/gradle-build.yml)
+# 17636 DevOps Final Project Submission
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/spring-projects/spring-petclinic) [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=7517918)
+## Group Members
 
-## Understanding the Spring Petclinic application with a few diagrams
+| Name          | AndrewID |
+| ------------- | -------- |
+| Ryan Spears   | rspears  |
+| Christy Tseng | yuchingt |
+| Nancy Lin     | yilingl2 |
+| Watson Chao   | yinchuac |
+| Iris Ting     | yunchiet |
+| Royce Ang     | royceang |
 
-[See the presentation here](https://speakerdeck.com/michaelisvy/spring-petclinic-sample-application)
+## Issues Related To OWASP ZAP Permissions
 
-## Run Petclinic locally
+To TAs:
 
-Spring Petclinic is a [Spring Boot](https://spring.io/guides/gs/spring-boot) application built using [Maven](https://spring.io/guides/gs/maven/) or [Gradle](https://spring.io/guides/gs/gradle/). You can build a jar file and run it from the command line (it should work just as well with Java 17 or newer):
-
-```bash
-git clone https://github.com/spring-projects/spring-petclinic.git
-cd spring-petclinic
-./mvnw package
-java -jar target/*.jar
-```
-
-You can then access the Petclinic at <http://localhost:8080/>.
-
-<img width="1042" alt="petclinic-screenshot" src="https://cloud.githubusercontent.com/assets/838318/19727082/2aee6d6c-9b8e-11e6-81fe-e889a5ddfded.png">
-
-Or you can run it from Maven directly using the Spring Boot Maven plugin. If you do this, it will pick up changes that you make in the project immediately (changes to Java source files require a compile as well - most people use an IDE for this):
+We have consistently been running into a permission related issue pertaining to `OWASP Zap`. Specifically, `Permission denied: '/zap/wrk/`.
+This is an impediment towards generating the `.html` file, which is one of the required deliverables. The `.html` file can be generated via:
 
 ```bash
-./mvnw spring-boot:run
+docker run -v $(pwd):/zap/wrk/:rw -t owasp/zap2docker-stable zap-baseline.py \ -t https://www.example.com -g gen.conf -r testreport.html
 ```
 
-> NOTE: If you prefer to use Gradle, you can build the app using `./gradlew build` and look for the jar file in `build/libs`.
+This is a known issue within the community: <https://github.com/zaproxy/zaproxy/issues/6993>.
 
-## Building a Container
+We have toiled days and nights over this and were not able to produce the `.html` version. However, we chose to ouput a `zap-results.txt` instead, which is similar to the `.html` version, albeit, a non user-friendly version of it.
 
-There is no `Dockerfile` in this project. You can build a container image (if you have a docker daemon) using the Spring Boot build plugin:
+## Step-By-Step Instructions: Provide detailed documentation outlining the steps to set up the environment and configure the DevSecOps pipeline
+
+Note to TAs:
+
+(1) All scripts can be found in the `Provisioning_Scripts_And_Configuration` folder.
+
+(2) File Structure
+
+```
+Provisioning_Scripts_And_Configuration/
+├── ansible/                        # Infrastructure automation (Ansible playbooks, roles, inventory)
+│   └── deploy.yml                  # Ansible deploy script
+│   └── inventory.ini               # Ansible inventory script
+├── jenkins/                        # Jenkins configuration, jobs, pipelines
+│   ├── docker-compose.yml          # Script to hook up Jenkins + Grafana + Prometheus + Sonarqube
+│   ├── Dockerfile                  # Dockerfile to setup Jenkins image for Arms64 Arch
+│   └── Dockefile.intel             # Dockerfile to setup Jenkins image for x86 Arch
+├── volumes/                        # Pre-exported Docker volume archives
+│   ├── grafana-storage.tar         # Grafana dashboards and settings
+│   ├── jenkins-data.tar            # Jenkins home directory data
+│   ├── jenkins-docker-certs.tar    # Docker client certificates for Jenkins
+│   ├── prometheus-data.tar         # Prometheus TSDB data
+│   ├── sonarqube_data.tar          # SonarQube project data
+│   ├── sonarqube_extensions.tar    # SonarQube plugins/extensions
+│   └── sonarqube_logs.tar          # SonarQube logs
+├── clean_up.sh                     # Shell script to tear down or clean resources
+├── output.txt                      # Consolidated commands output log file (combined stdout/stderr)
+└── setup.sh                        # Shell script to provision or bootstrap services
+```
+
+(3) a `setup.sh` script is provided to setup the entire DevSecOps pipeline. The `setup.sh` is the entry point that provides an encapsulation of all the commands necessary for a successful deployment of the pipeline. This includes running the various DockerFiles and DockerCompose.
+
+Additionally, to make configuration easy, most of the configurations were stored in its individual volume, which can be found in the `volumes/` folder.
+
+---
+
+**Step-By-Step Instructions Set Up**
+
+Pre-requesite: Ensure that you have `pip3` installed.
 
 ```bash
-./mvnw spring-boot:build-image
+# Step 0: Install python
+https://www.python.org/downloads/
+
+# Step 0.5 Install Node js
+https://nodejs.org/en/download
+
+# Step 0.7 Install UTM(for Mac) and then create a Ubuntu instance
+https://mac.getutm.app/
+
+# Step 1: Clone from this project
+git clone https://github.com/dorryspears/spring-petclinic-group-project.git
+
+# Step 2: cd to this project
+cd spring-petclinic-group-project
+
+# Step 3: run main script
+chmod +x setup.sh
+
+# Step 4: Run setup script
+./setup.sh
+
+# Step 5: Open Jenkins UI
+# Jenkins URL: http://localhost:8080
+
+Username: rspears
+Password: ThisisforMSE123$
+
+# Jenkins automates the build, test, and deployment stages of the CI/CD pipeline.
+
+# Step 6: Commit a change within the code and push to `main`
+# This will trigger the DevSecOps pipeline EVERY 1 Minute via a poll-based Jenkins job.
+
+# Step 7: Tooling Overview
+
+# SonarQube: http://localhost:9000
+# ➤ Static code analysis to detect bugs, vulnerabilities, and code smells in the application.
+
+# Grafana: http://localhost:3000
+# ➤ Real-time dashboard visualization for monitoring system metrics and pipeline health.
+
+# Prometheus: http://localhost:9090
+# ➤ Time-series monitoring system that collects metrics from the app and infrastructure for alerting and analysis.
+
+#  OWASP ZAP: (Runs automatically — Artifact exported as .txt file)
+# ➤ Performs dynamic application security testing (DAST) to find runtime web vulnerabilities like XSS, SQLi, etc.
+
+
+# Ansible:: As part of the jenkins pipeline, Ansible playbook is invoked
+# by consuming the following with its list of host specifications
+deploy.yml # invoked file
+inventory.ini # Host specifications
+
+# These tools are automatically integrated into the DevSecOps pipeline during setup.
 ```
 
-## In case you find a bug/suggested improvement for Spring Petclinic
-
-Our issue tracker is available [here](https://github.com/spring-projects/spring-petclinic/issues).
-
-## Database configuration
-
-In its default configuration, Petclinic uses an in-memory database (H2) which
-gets populated at startup with data. The h2 console is exposed at `http://localhost:8080/h2-console`,
-and it is possible to inspect the content of the database using the `jdbc:h2:mem:<uuid>` URL. The UUID is printed at startup to the console.
-
-A similar setup is provided for MySQL and PostgreSQL if a persistent database configuration is needed. Note that whenever the database type changes, the app needs to run with a different profile: `spring.profiles.active=mysql` for MySQL or `spring.profiles.active=postgres` for PostgreSQL. See the [Spring Boot documentation](https://docs.spring.io/spring-boot/how-to/properties-and-configuration.html#howto.properties-and-configuration.set-active-spring-profiles) for more detail on how to set the active profile.
-
-You can start MySQL or PostgreSQL locally with whatever installer works for your OS or use docker:
+Note to TAs: `OWASP ZAP` has its own script integrated within the Jenkins pipeline, and there's NO need to run this manually.
 
 ```bash
-docker run -e MYSQL_USER=petclinic -e MYSQL_PASSWORD=petclinic -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=petclinic -p 3306:3306 mysql:9.1
+# OWASP ZAP command line to generate the output artifact at
+# the end of the jenkins pipeline
+docker run --rm --network jenkins -t ghcr.io/zaproxy/zaproxy:stable     zap-baseline.py -t https://192.168.64.3:8080 -I > zap-results.txt
 ```
 
-or
+---
+
+**Performing Clean Upt**
+
+To facillitate the clean-up process, we have also provided the following
+clean up script.
 
 ```bash
-docker run -e POSTGRES_USER=petclinic -e POSTGRES_PASSWORD=petclinic -e POSTGRES_DB=petclinic -p 5432:5432 postgres:17.0
+# run the following script from root of spring-petclinic-group-project/
+chmod +x clean_up.sh
+./clean_up.sh
 ```
 
-Further documentation is provided for [MySQL](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources/db/mysql/petclinic_db_setup_mysql.txt)
-and [PostgreSQL](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources/db/postgres/petclinic_db_setup_postgres.txt).
+---
 
-Instead of vanilla `docker` you can also use the provided `docker-compose.yml` file to start the database containers. Each one has a service named after the Spring profile:
+**Details of setup.sh**
 
 ```bash
-docker compose up mysql
+#!/bin/bash
+
+ROOT_PWD=$PWD
+# pre-installation
+# Step 1: Curl zip
+echo "------- Starting Setup -------"
+mkdir -p backup
+cd backup
+echo "------- donwloading final_devops from google drive ---------"
+pip3 install gdown
+gdown 1SCn5TG1KIn2Za0plufOoh4FnknzUDdp6
+echo "------- unzipping devops file ---------"
+unzip final_devops.zip
+
+echo "---- Installing all other dependencies---"
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \\
+    apt-get update && \\
+    apt-get install -y \\
+    openjdk-17-jdk \\
+    sshpass \\
+    ansible \\
+    apt-transport-https \\
+    ca-certificates \\
+    curl \\
+    software-properties-common \\
+    lsb-release \\
+    gnupg \\
+    nodejs && \\
+    apt-get clean && \\
+    rm -rf /var/lib/apt/lists/*
+
+echo "------- moving all tar files to final_devops ---------"
+# move all tar files from final_devops folder into current backup
+mv final_devops/* .
+
+# Step 2: Create volumes
+echo "------- Creating all necessary volumes ---------"
+docker volume create jenkins-data
+docker volume create jenkins_home
+docker volume create jenkins-docker-certs
+docker volume create grafana-storage
+docker volume create prometheus-data
+
+cd "$ROOT_PWD"
+
+# Step 3: Untar + Upload / Restore volume
+echo "------- Performing untar and hooking up to volumes ---------"
+docker run --rm -v jenkins_home:/volume -v $PWD/backup:/backup alpine sh -c "rm -rf /volume/* && tar -xvf /backup/jenkins_home.tar -C /volume"
+docker run --rm -v jenkins-data:/volume -v $PWD/backup:/backup alpine sh -c "rm -rf /volume/* && tar -xvf /backup/jenkins-data.tar -C /volume"
+docker run --rm -v jenkins-docker-certs:/volume -v $PWD/backup:/backup alpine sh -c "rm -rf /volume/* && tar -xvf /backup/jenkins-docker-certs.tar -C /volume"
+docker run --rm -v grafana-storage:/volume -v $PWD/backup:/backup alpine sh -c "rm -rf /volume/* && tar -xvf /backup/grafana-storage.tar -C /volume"
+docker run --rm -v prometheus-data:/volume -v $PWD/backup:/backup alpine sh -c "rm -rf /volume/* && tar -xvf /backup/prometheus-data.tar -C /volume"
+
+
+# Step 4: Create a network
+# note: delete network if it's already there
+echo "------- Creating a common docker network ---------"
+docker network rm network
+docker network create network
+
+# Step 5: Run docker-compose:: (1) spins up jenkins
+# docker run -d --name jenkins --network network -p 8080:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home -v jenkins-data:/jenkins-data -v jenkins-docker-certs:/certs/client my-jenkins && docker logs -f jenkins
+cd "$ROOT_PWD"
+cd jenkins/
+
+echo "------- Building jenkins according to type of arch platform ---------"
+# Detect architecture
+ARCH=$(uname -m)
+echo "Detected architecture: $ARCH"
+# Select appropriate Dockerfile based on architecture
+if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+    echo "Building for ARM64 architecture..."
+    JAVA_HOME_PATH="/usr/lib/jvm/java-17-openjdk-arm64"
+    docker pull --platform linux/arm64 rspearscmu/devops-final:jenkins
+    # rename to my-jenkins
+    docker tag rspearscmu/devops-final:jenkins my-jenkins
+    DOCKER_ARCH="arm64"
+elif [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+    echo "Building for x86_64/AMD64 architecture..."
+    JAVA_HOME_PATH="/usr/lib/jvm/java-17-openjdk-amd64"
+    docker build -t my-jenkins -f Dockerfile.intel .
+    DOCKER_ARCH="amd64"
+else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+fi
+
+echo "------- Running Docker Compose ---------"
+docker compose --verbose up --build
+docker compose --verbose up -d # runs on detached mode
+docker compose logs -f  # follow logs
 ```
 
-or
+---
 
-```bash
-docker compose up postgres
-```
+**Landing Page URLs**
 
-## Test Applications
+- Jenkins: `http://localhost:8080`
+- Sonarqube: `http://localhost:9000`
+- Grafana: `http://localhost:3000`
+- Prometheus: `http://localhost:9090`
 
-At development time we recommend you use the test applications set up as `main()` methods in `PetClinicIntegrationTests` (using the default H2 database and also adding Spring Boot Devtools), `MySqlTestApplication` and `PostgresIntegrationTests`. These are set up so that you can run the apps in your IDE to get fast feedback and also run the same classes as integration tests against the respective database. The MySql integration tests use Testcontainers to start the database in a Docker container, and the Postgres tests use Docker Compose to do the same thing.
+---
 
-## Compiling the CSS
+### Additional Configurations (FYI)
 
-There is a `petclinic.css` in `src/main/resources/static/resources/css`. It was generated from the `petclinic.scss` source, combined with the [Bootstrap](https://getbootstrap.com/) library. If you make changes to the `scss`, or upgrade Bootstrap, you will need to re-compile the CSS resources using the Maven profile "css", i.e. `./mvnw package -P css`. There is no build profile for Gradle to compile the CSS.
+- Jenkins: served via port `8080:8080`
+- Grafana: served via port `3000:3000`
+- Prometheus: served via port `9090:9090`
+- Sonarqube: served via port `9000:9000`
 
-## Working with Petclinic in your IDE
+## Other Deliverables
 
-### Prerequisites
+### Screenshot Folder Contains
 
-The following items should be installed in your system:
+- spring-petclinic welcome screen on the production web server.
+- Jenkins screen.
+- SonarQube screen.
+- Prometheus screen.
+- Grafana screen.
+- OWASP ZAP `zap-result.txt` file.
+- Evidence of code change triggers the pipeline, deployment is done, and the content of the application is automatically updated.
 
-- Java 17 or newer (full JDK, not a JRE)
-- [Git command line tool](https://help.github.com/articles/set-up-git)
-- Your preferred IDE
-  - Eclipse with the m2e plugin. Note: when m2e is available, there is an m2 icon in `Help -> About` dialog. If m2e is
-  not there, follow the install process [here](https://www.eclipse.org/m2e/)
-  - [Spring Tools Suite](https://spring.io/tools) (STS)
-  - [IntelliJ IDEA](https://www.jetbrains.com/idea/)
-  - [VS Code](https://code.visualstudio.com)
+### Pipeline Demonstration Folder
 
-### Steps
-
-1. On the command line run:
-
-    ```bash
-    git clone https://github.com/spring-projects/spring-petclinic.git
-    ```
-
-1. Inside Eclipse or STS:
-
-    Open the project via `File -> Import -> Maven -> Existing Maven project`, then select the root directory of the cloned repo.
-
-    Then either build on the command line `./mvnw generate-resources` or use the Eclipse launcher (right-click on project and `Run As -> Maven install`) to generate the CSS. Run the application's main method by right-clicking on it and choosing `Run As -> Java Application`.
-
-1. Inside IntelliJ IDEA:
-
-    In the main menu, choose `File -> Open` and select the Petclinic [pom.xml](pom.xml). Click on the `Open` button.
-
-    - CSS files are generated from the Maven build. You can build them on the command line `./mvnw generate-resources` or right-click on the `spring-petclinic` project then `Maven -> Generates sources and Update Folders`.
-
-    - A run configuration named `PetClinicApplication` should have been created for you if you're using a recent Ultimate version. Otherwise, run the application by right-clicking on the `PetClinicApplication` main class and choosing `Run 'PetClinicApplication'`.
-
-1. Navigate to the Petclinic
-
-    Visit [http://localhost:8080](http://localhost:8080) in your browser.
-
-## Looking for something in particular?
-
-|Spring Boot Configuration | Class or Java property files  |
-|--------------------------|---|
-|The Main Class | [PetClinicApplication](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java) |
-|Properties Files | [application.properties](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources) |
-|Caching | [CacheConfiguration](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java) |
-
-## Interesting Spring Petclinic branches and forks
-
-The Spring Petclinic "main" branch in the [spring-projects](https://github.com/spring-projects/spring-petclinic)
-GitHub org is the "canonical" implementation based on Spring Boot and Thymeleaf. There are
-[quite a few forks](https://spring-petclinic.github.io/docs/forks.html) in the GitHub org
-[spring-petclinic](https://github.com/spring-petclinic). If you are interested in using a different technology stack to implement the Pet Clinic, please join the community there.
-
-## Interaction with other open-source projects
-
-One of the best parts about working on the Spring Petclinic application is that we have the opportunity to work in direct contact with many Open Source projects. We found bugs/suggested improvements on various topics such as Spring, Spring Data, Bean Validation and even Eclipse! In many cases, they've been fixed/implemented in just a few days.
-Here is a list of them:
-
-| Name | Issue |
-|------|-------|
-| Spring JDBC: simplify usage of NamedParameterJdbcTemplate | [SPR-10256](https://github.com/spring-projects/spring-framework/issues/14889) and [SPR-10257](https://github.com/spring-projects/spring-framework/issues/14890) |
-| Bean Validation / Hibernate Validator: simplify Maven dependencies and backward compatibility |[HV-790](https://hibernate.atlassian.net/browse/HV-790) and [HV-792](https://hibernate.atlassian.net/browse/HV-792) |
-| Spring Data: provide more flexibility when working with JPQL queries | [DATAJPA-292](https://github.com/spring-projects/spring-data-jpa/issues/704) |
-
-## Contributing
-
-The [issue tracker](https://github.com/spring-projects/spring-petclinic/issues) is the preferred channel for bug reports, feature requests and submitting pull requests.
-
-For pull requests, editor preferences are available in the [editor config](.editorconfig) for easy use in common text editors. Read more and download plugins at <https://editorconfig.org>. All commits must include a __Signed-off-by__ trailer at the end of each commit message to indicate that the contributor agrees to the Developer Certificate of Origin.
-For additional details, please refer to the blog post [Hello DCO, Goodbye CLA: Simplifying Contributions to Spring](https://spring.io/blog/2025/01/06/hello-dco-goodbye-cla-simplifying-contributions-to-spring).
-
-## License
-
-The Spring PetClinic sample application is released under version 2.0 of the [Apache License](https://www.apache.org/licenses/LICENSE-2.0).
+- The `youtube link` which showcases the demonstration of the DevSecOps pipeline being triggered can be found in the `.txt` file in the `VideoDemonstration` folder.
