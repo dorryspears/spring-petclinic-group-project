@@ -1,0 +1,124 @@
+- name: Deploy Spring PetClinic Without Docker
+  hosts: local_vm
+  become: true
+
+  tasks:
+    - name: Add Java 17 repository
+      apt_repository:
+        repo: ppa:openjdk-r/ppa
+        state: present
+
+    - name: Install Java 17
+      become: yes
+      block:
+        - name: Update apt cache
+          apt:
+            update_cache: yes
+            force_apt_get: yes
+          register: apt_update
+          retries: 3
+          delay: 10
+          until: apt_update is success
+
+        - name: Install Java 17
+          apt:
+            name: openjdk-17-jdk
+            state: present
+            force_apt_get: yes
+          retries: 3
+          delay: 10
+
+    - name: Install Git
+      package:
+        name: git
+        state: present
+
+    - name: Remove existing repository if present
+      file:
+        path: /opt/spring-petclinic
+        state: absent
+
+    - name: Clone your repo (fresh copy)
+      ansible.builtin.git:
+        repo: https://github.com/dorryspears/spring-petclinic-group-project.git
+        dest: /opt/spring-petclinic
+        version: main
+        force: yes
+
+    - name: Make Maven wrapper executable
+      ansible.builtin.file:
+        path: /opt/spring-petclinic/mvnw
+        mode: '0755'
+
+    - name: Remove Maven cache
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /root/.m2/repository
+        - /home/ubuntu/.m2/repository
+
+    - name: Build the application (clean)
+      ansible.builtin.shell: ./mvnw clean package -Dmaven.repo.local=/tmp/clean-repo
+      args:
+        chdir: /opt/spring-petclinic
+
+    - name: Force kill all Java processes
+      shell: killall -9 java || echo "No processes"
+      ignore_errors: yes
+      
+    - name: Wait for processes to terminate
+      pause:
+        seconds: 5
+        
+    - name: Verify no Java processes are running
+      shell: ps aux | grep java | grep -v grep || echo "No Java processes"
+      register: java_check
+      
+    - name: Display Java process check
+      debug:
+        var: java_check.stdout_lines
+        
+    - name: Remove old logs and PID files
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /opt/spring-petclinic/app.log
+        - /opt/spring-petclinic/app.pid
+        - /opt/spring-petclinic/target/classes/application.properties.resolved
+        
+    - name: Check if port 8080 is bound
+      shell: netstat -tulpn | grep 8080 || echo "Port not in use"
+      register: port_check
+      
+    - name: Display port check results
+      debug:
+        var: port_check.stdout_lines
+        
+    - name: Run the application with clean environment
+      ansible.builtin.shell: |
+        export SPRING_PROFILES_ACTIVE=default
+        export SPRING_CACHE_TYPE=NONE
+        nohup java -jar target/*.jar --spring.profiles.active=default --server.servlet.session.persistent=false --spring.thymeleaf.cache=false > /opt/spring-petclinic/app.log 2>&1 &
+        echo $! > /opt/spring-petclinic/app.pid
+      args:
+        chdir: /opt/spring-petclinic
+        
+    - name: Wait for application to start
+      wait_for:
+        port: 8080
+        timeout: 120
+        
+    - name: Check application status
+      uri:
+        url: http://localhost:8080
+        return_content: yes
+        follow_redirects: yes
+        method: GET
+        headers:
+          Cache-Control: "no-cache, no-store"
+      register: webpage
+      retries: 5
+      delay: 10
+      until: webpage.status == 200
