@@ -39,6 +39,10 @@
         repo: https://github.com/dorryspears/spring-petclinic-group-project.git
         dest: /opt/spring-petclinic
         version: main
+    - name: Move Dockerfile to project root
+      copy:
+        src: Dockerfile
+        dest: /opt/spring-petclinic/Dockerfile
 
     - name: Stop existing containers
       shell: docker-compose down
