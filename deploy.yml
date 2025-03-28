@@ -1,51 +1,20 @@
-- name: Deploy Spring PetClinic to EC2
-  hosts: aws
-  become: true
+- name: Install Java
+  package:
+    name: java-17-amazon-corretto
+    state: present
 
-  tasks:
-    - name: Ensure git is installed
-      package:
-        name: git
-        state: present
+- name: Clone your repo
+  git:
+    repo: https://github.com/dorryspears/spring-petclinic-group-project.git
+    dest: /opt/spring-petclinic
+    version: main
 
-    - name: Ensure Docker is installed
-      package:
-        name: docker
-        state: present
+- name: Build with Maven Wrapper
+  shell: ./mvnw clean package
+  args:
+    chdir: /opt/spring-petclinic
 
-    - name: Ensure Docker Compose is installed
-      shell: |
-        if ! command -v docker-compose &> /dev/null; then
-          curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
-          -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
-        fi
-      args:
-        creates: /usr/local/bin/docker-compose
-
-    - name: Start Docker service
-      service:
-        name: docker
-        state: started
-        enabled: true
-
-    - name: Add ec2-user to docker group
-      user:
-        name: ec2-user
-        groups: docker
-        append: yes
-
-    - name: Clone your repo
-      git:
-        repo: https://github.com/dorryspears/spring-petclinic-group-project.git
-        dest: /opt/spring-petclinic
-        version: main
-    - name: Stop existing containers
-      shell: docker-compose down
-      args:
-        chdir: /opt/spring-petclinic
-      ignore_errors: true  # in case it's the first run
-
-    - name: Run the app with Docker Compose
-      shell: docker-compose up -d --build
-      args:
-        chdir: /opt/spring-petclinic
+- name: Run the app
+  shell: nohup java -jar target/*.jar > /dev/null 2>&1 &
+  args:
+    chdir: /opt/spring-petclinic
