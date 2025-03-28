@@ -1,20 +1,35 @@
-- name: Install Java
-  package:
-    name: java-17-amazon-corretto
-    state: present
+- name: Deploy Spring PetClinic Without Docker
+  hosts: aws
+  become: true
 
-- name: Clone your repo
-  git:
-    repo: https://github.com/dorryspears/spring-petclinic-group-project.git
-    dest: /opt/spring-petclinic
-    version: main
+  tasks:
+    - name: Install Java
+      ansible.builtin.yum:
+        name: java-17-amazon-corretto
+        state: present
 
-- name: Build with Maven Wrapper
-  shell: ./mvnw clean package
-  args:
-    chdir: /opt/spring-petclinic
+    - name: Install Git
+      ansible.builtin.yum:
+        name: git
+        state: present
 
-- name: Run the app
-  shell: nohup java -jar target/*.jar > /dev/null 2>&1 &
-  args:
-    chdir: /opt/spring-petclinic
+    - name: Clone your repo
+      ansible.builtin.git:
+        repo: https://github.com/dorryspears/spring-petclinic-group-project.git
+        dest: /opt/spring-petclinic
+        version: main
+
+    - name: Make Maven wrapper executable
+      ansible.builtin.file:
+        path: /opt/spring-petclinic/mvnw
+        mode: '0755'
+
+    - name: Build the application
+      ansible.builtin.shell: ./mvnw clean package
+      args:
+        chdir: /opt/spring-petclinic
+
+    - name: Run the application
+      ansible.builtin.shell: nohup java -jar target/*.jar > /dev/null 2>&1 &
+      args:
+        chdir: /opt/spring-petclinic
