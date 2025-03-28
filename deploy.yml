@@ -40,6 +40,12 @@
         dest: /opt/spring-petclinic
         version: main
 
+    - name: Stop existing containers
+      shell: docker-compose down
+      args:
+        chdir: /opt/spring-petclinic
+      ignore_errors: true  # in case it's the first run
+
     - name: Run the app with Docker Compose
       shell: docker-compose up -d --build
       args:
