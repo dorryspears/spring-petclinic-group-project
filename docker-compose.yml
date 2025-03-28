@@ -1,9 +1,14 @@
+version: "3.8"
+
 services:
   petclinic:
     build: .
     container_name: petclinic
     ports:
       - "8080:8080"
+    depends_on:
+      - mysql
+      - postgres
     restart: always
 
   mysql:
@@ -17,7 +22,7 @@ services:
       - MYSQL_PASSWORD=petclinic
       - MYSQL_DATABASE=petclinic
     volumes:
-      - "./conf.d:/etc/mysql/conf.d:ro"
+      - mysql-data:/var/lib/mysql
     restart: always
 
   postgres:
@@ -28,4 +33,10 @@ services:
       - POSTGRES_PASSWORD=petclinic
       - POSTGRES_USER=petclinic
       - POSTGRES_DB=petclinic
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     restart: always
+
+volumes:
+  mysql-data:
+  postgres-data:
