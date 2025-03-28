@@ -6,18 +6,6 @@ services:
       - "8080:8080"
     restart: always
 
-  nginx:
-    image: nginx:alpine
-    container_name: nginx-proxy
-    depends_on:
-      - petclinic
-    ports:
-      - "443:443"
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/certs:/etc/nginx/certs
-    restart: always
-
   mysql:
     image: mysql:8.0
     ports:
