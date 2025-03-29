@@ -1,10 +1,18 @@
 all:
   hosts:
-    jenkins_vm:
-      ansible_host: 192.168.63.4    # Your actual VM IP
+    local_vm:
+      ansible_host: 192.168.64.3
       ansible_user: ubuntu
       ansible_password: ubuntu
+      ansible_sudo_pass: ubuntu
+      ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60'
+      # If you haven't set up SSH keys yet, use password:
+      # ansible_password: your_password
       ansible_ssh_private_key_file: ~/.ssh/id_rsa
       # If you haven't set up SSH keys yet, use password:
       # ansible_password: your_password
-      ansible_sudo_pass: ubuntu  # The sudo password for the jenkins user 
+      # Changed SSH port to 24
+      # ansible_port: 24
+      # If you haven't set up SSH keys yet, use password:
+      # ansible_password: your_password
+      # ansible_sudo_pass: ubuntu  # The sudo password for the jenkins user 
