@@ -1,15 +1,21 @@
 - name: Deploy Spring PetClinic Without Docker
-  hosts: aws
+  hosts: local_vm
   become: true
 
   tasks:
-    - name: Install Java
-      ansible.builtin.yum:
-        name: java-17-amazon-corretto
+    - name: Add Java 17 repository
+      apt_repository:
+        repo: ppa:openjdk-r/ppa
         state: present
 
+    - name: Install Java 17
+      apt:
+        name: openjdk-17-jdk
+        state: present
+        update_cache: yes
+
     - name: Install Git
-      ansible.builtin.yum:
+      package:
         name: git
         state: present
 
@@ -33,3 +39,72 @@
       ansible.builtin.shell: nohup java -jar target/*.jar > /dev/null 2>&1 &
       args:
         chdir: /opt/spring-petclinic
+
+- name: Deploy Docker and Jenkins Container
+  hosts: jenkins_vm
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+        state: present
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: yes
+
+    - name: Install Docker Python package
+      pip:
+        name: docker
+
+    - name: Add jenkins user to docker group
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
+
+    - name: Create Jenkins network
+      docker_network:
+        name: jenkins
+        state: present
+
+    - name: Pull Jenkins Docker image
+      docker_image:
+        name: jenkins/jenkins:2.492.2-jdk17
+        source: pull
+
+    - name: Run Jenkins container
+      docker_container:
+        name: jenkins
+        image: jenkins/jenkins:2.492.2-jdk17
+        state: started
+        restart_policy: always
+        ports:
+          - "8080:8080"
+          - "50000:50000"
+        networks:
+          - name: jenkins
+        volumes:
+          - jenkins_home:/var/jenkins_home

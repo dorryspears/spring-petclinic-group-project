@@ -1,0 +1,10 @@
+all:
+  hosts:
+    jenkins_vm:
+      ansible_host: 192.168.63.4    # Your actual VM IP
+      ansible_user: ubuntu
+      ansible_password: ubuntu
+      ansible_ssh_private_key_file: ~/.ssh/id_rsa
+      # If you haven't set up SSH keys yet, use password:
+      # ansible_password: your_password
+      ansible_sudo_pass: ubuntu  # The sudo password for the jenkins user 
