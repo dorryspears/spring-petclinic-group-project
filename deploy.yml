@@ -9,10 +9,25 @@
         state: present
 
     - name: Install Java 17
-      apt:
-        name: openjdk-17-jdk
-        state: present
-        update_cache: yes
+      become: yes
+      block:
+        - name: Update apt cache
+          apt:
+            update_cache: yes
+            cache_valid_time: 3600
+            force_apt_get: yes
+          register: apt_update
+          retries: 3
+          delay: 10
+          until: apt_update is success
+
+        - name: Install Java 17
+          apt:
+            name: openjdk-17-jdk
+            state: present
+            force_apt_get: yes
+          retries: 3
+          delay: 10
 
     - name: Install Git
       package:

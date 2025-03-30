@@ -1,5 +1,10 @@
-FROM eclipse-temurin:17-jdk
-WORKDIR /app
-COPY target/*.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+FROM ghcr.io/zaproxy/zaproxy:stable
+
+# Set working directory
+WORKDIR /zap
+
+# Create a script to run ZAP and handle the report
+COPY --chmod=755 run-zap.sh /zap/
+
+# Set the entry point to our script
+ENTRYPOINT ["/zap/run-zap.sh"]
