@@ -50,10 +50,42 @@
       args:
         chdir: /opt/spring-petclinic
 
+    - name: Check if application is already running
+      shell: pgrep -f "java -jar target/*.jar" || echo "not running"
+      register: app_status
+      changed_when: false
+      
+    - name: Stop existing application if running
+      shell: pkill -f "java -jar target/*.jar" || echo "No process to kill"
+      when: app_status.stdout != "not running"
+      
+    - name: Wait for process to stop
+      wait_for:
+        path: "/proc/{{ app_status.stdout }}"
+        state: absent
+      when: app_status.stdout != "not running"
+      ignore_errors: yes
+      
     - name: Run the application
-      ansible.builtin.shell: nohup java -jar target/*.jar > /dev/null 2>&1 &
+      ansible.builtin.shell: |
+        nohup java -jar target/*.jar > /opt/spring-petclinic/app.log 2>&1 &
+        echo $! > /opt/spring-petclinic/app.pid
       args:
         chdir: /opt/spring-petclinic
+        
+    - name: Wait for application to start
+      wait_for:
+        port: 8080
+        timeout: 60
+        
+    - name: Check application status
+      uri:
+        url: http://localhost:8080
+        return_content: yes
+      register: webpage
+      retries: 5
+      delay: 10
+      until: webpage.status == 200
 
 - name: Deploy Docker and Jenkins Container
   hosts: jenkins_vm
