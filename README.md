@@ -115,7 +115,7 @@ The following items should be installed in your system:
 
 1. Inside IntelliJ IDEA:
 
-    In the main menu, choose `File -> Open` and select the Petclinic [pom.xml](pom.xml). Click on the `Open` button.
+    In the main menu, choose `File -> Open` and select the Petclinic [pom.xml](pom.xml). Click on the `Open` button.
 
     - CSS files are generated from the Maven build. You can build them on the command line `./mvnw generate-resources` or right-click on the `spring-petclinic` project then `Maven -> Generates sources and Update Folders`.
 
@@ -161,3 +161,116 @@ For additional details, please refer to the blog post [Hello DCO, Goodbye CLA: S
 ## License
 
 The Spring PetClinic sample application is released under version 2.0 of the [Apache License](https://www.apache.org/licenses/LICENSE-2.0).
+
+# DevOps Tooling Environment Setup
+
+This repository contains Docker configurations for setting up a comprehensive DevOps environment with Jenkins, Grafana, Prometheus, and SonarQube.
+
+## Prerequisites
+
+- Docker and Docker Compose installed on your system
+- Basic knowledge of Docker concepts
+- Available ports: 8080, 9000, 9090, 3000, and 50000
+
+## Setup Instructions
+
+### 1. Build the Jenkins Custom Image
+
+First, you need to build the custom Jenkins image using the provided Dockerfile:
+
+```bash
+cd jenkins
+docker build -t my-jenkins .
+cd ..
+```
+
+This builds a custom Jenkins image with additional tools:
+- Java 17
+- Node.js 18
+- Ansible
+- Docker CLI
+- SSH tools
+
+### 2. Create Required Docker Volumes
+
+Before running the Docker Compose file, you need to create the external volumes:
+
+```bash
+docker volume create grafana-storage
+docker volume create jenkins_home
+docker volume create prometheus-data
+```
+
+### 3. Start the Environment
+
+Now you can start all services using Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+The `-d` flag runs the containers in detached mode (background).
+
+### 4. Access the Services
+
+After startup, you can access the services at:
+
+- Jenkins: http://localhost:8080
+  - Initial admin password can be obtained with: `docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword`
+- Grafana: http://localhost:3000 (default credentials: admin/admin)
+- Prometheus: http://localhost:9090
+- SonarQube: http://localhost:9000 (default credentials: admin/admin)
+
+## Environment Management
+
+### Checking Status
+
+To check the status of your containers:
+
+```bash
+docker-compose ps
+```
+
+### Viewing Logs
+
+To see the logs of a specific service:
+
+```bash
+docker-compose logs [service_name]
+```
+
+Replace `[service_name]` with jenkins, grafana, prometheus, or sonarqube.
+
+### Stopping the Environment
+
+To stop all services:
+
+```bash
+docker-compose down
+```
+
+This stops and removes the containers but preserves the volumes.
+
+### Complete Reset
+
+To completely reset the environment (WARNING: this deletes all data):
+
+```bash
+docker-compose down
+docker volume rm grafana-storage jenkins_home prometheus-data
+```
+
+## Troubleshooting
+
+1. **Port conflicts**: If any of the ports are already in use, modify the port mappings in the docker-compose.yml file.
+
+2. **Volume permissions**: If you encounter permission issues with volumes, you may need to adjust permissions:
+   ```bash
+   docker volume inspect [volume_name]
+   ```
+   Then change permissions on the volume's mountpoint.
+
+3. **Container fails to start**: Check the logs for the specific service:
+   ```bash
+   docker-compose logs [service_name]
+   ```

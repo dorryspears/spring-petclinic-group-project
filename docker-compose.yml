@@ -1,42 +1,51 @@
-version: "3.8"
-
 services:
-  petclinic:
-    build: /opt/spring-petclinic
-    container_name: petclinic
+  jenkins:
+    image: my-jenkins
+    container_name: jenkins-test
     ports:
       - "8080:8080"
-    depends_on:
-      - mysql
-      - postgres
-    restart: always
-
-  mysql:
-    image: mysql:8.0
-    ports:
-      - "3307:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=
-      - MYSQL_ALLOW_EMPTY_PASSWORD=true
-      - MYSQL_USER=petclinic
-      - MYSQL_PASSWORD=petclinic
-      - MYSQL_DATABASE=petclinic
+      - "50000:50000"
     volumes:
-      - mysql-data:/var/lib/mysql
-    restart: always
+      - jenkins_home:/var/jenkins_home
+    networks:
+      - network
 
-  postgres:
-    image: postgres:15
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana-test
     ports:
-      - "5434:5432"
-    environment:
-      - POSTGRES_PASSWORD=petclinic
-      - POSTGRES_USER=petclinic
-      - POSTGRES_DB=petclinic
+      - "3000:3000"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
-    restart: always
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - network
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus-test
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+    networks:
+      - network
+
+  sonarqube:
+    image: sonarqube:10.6-community
+    container_name: sonarqube-test
+    ports:
+      - "9000:9000"
+    networks:
+      - network
 
 volumes:
-  mysql-data:
-  postgres-data:
+  grafana-storage:
+    external: true
+  jenkins_home:
+    external: true
+  prometheus-data:
+    external: true
+
+networks:
+  network:
+    external: false
