@@ -14,7 +14,6 @@
         - name: Update apt cache
           apt:
             update_cache: yes
-            cache_valid_time: 3600
             force_apt_get: yes
           register: apt_update
           retries: 3
@@ -34,58 +33,115 @@
         name: git
         state: present
 
-    - name: Clone your repo
+    # Force clean checkout
+    - name: Remove existing repository if present
+      file:
+        path: /opt/spring-petclinic
+        state: absent
+
+    - name: Clone your repo (fresh copy)
       ansible.builtin.git:
         repo: https://github.com/dorryspears/spring-petclinic-group-project.git
         dest: /opt/spring-petclinic
         version: main
+        force: yes
 
     - name: Make Maven wrapper executable
       ansible.builtin.file:
         path: /opt/spring-petclinic/mvnw
         mode: '0755'
 
-    - name: Build the application
-      ansible.builtin.shell: ./mvnw clean package
+    # Clean Maven cache
+    - name: Remove Maven cache
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /root/.m2/repository
+        - /home/ubuntu/.m2/repository
+
+    # Clean build with no cache
+    - name: Build the application (clean)
+      ansible.builtin.shell: ./mvnw clean package -Dmaven.repo.local=/tmp/clean-repo
       args:
         chdir: /opt/spring-petclinic
 
-    - name: Check if application is already running
-      shell: pgrep -f "java -jar target/*.jar" || echo "not running"
-      register: app_status
-      changed_when: false
-      
-    - name: Stop existing application if running
-      shell: pkill -f "java -jar target/*.jar" || echo "No process to kill"
-      when: app_status.stdout != "not running"
-      
-    - name: Wait for process to stop
-      wait_for:
-        path: "/proc/{{ app_status.stdout }}"
-        state: absent
-      when: app_status.stdout != "not running"
+    # Kill any running Java processes
+    - name: Force kill all Java processes
+      shell: killall -9 java || echo "No Java processes running"
       ignore_errors: yes
       
-    - name: Run the application
+    # Wait a moment for processes to completely terminate
+    - name: Wait for processes to terminate
+      pause:
+        seconds: 5
+        
+    # Double-check no Java processes are left
+    - name: Verify no Java processes are running
+      shell: ps aux | grep java | grep -v grep || echo "No Java processes"
+      register: java_check
+      
+    - name: Display Java process check
+      debug:
+        var: java_check.stdout_lines
+        
+    # Clean up logs and PID files
+    - name: Remove old logs and PID files
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /opt/spring-petclinic/app.log
+        - /opt/spring-petclinic/app.pid
+        - /opt/spring-petclinic/target/classes/application.properties.resolved
+        
+    # Clear any port bindings
+    - name: Check if port 8080 is bound
+      shell: netstat -tulpn | grep 8080 || echo "Port not in use"
+      register: port_check
+      
+    - name: Display port check results
+      debug:
+        var: port_check.stdout_lines
+        
+    # Start the application
+    - name: Run the application with clean environment
       ansible.builtin.shell: |
-        nohup java -jar target/*.jar > /opt/spring-petclinic/app.log 2>&1 &
+        export SPRING_PROFILES_ACTIVE=default
+        export SPRING_CACHE_TYPE=NONE
+        nohup java -jar target/*.jar --spring.profiles.active=default --server.servlet.session.persistent=false --spring.thymeleaf.cache=false > /opt/spring-petclinic/app.log 2>&1 &
         echo $! > /opt/spring-petclinic/app.pid
       args:
         chdir: /opt/spring-petclinic
         
+    # Longer wait to ensure the application is fully started
     - name: Wait for application to start
       wait_for:
         port: 8080
-        timeout: 60
+        timeout: 120
         
+    # Verify application is running
     - name: Check application status
       uri:
         url: http://localhost:8080
         return_content: yes
+        follow_redirects: yes
+        method: GET
+        headers:
+          Cache-Control: "no-cache, no-store"
       register: webpage
       retries: 5
       delay: 10
       until: webpage.status == 200
+      
+    # Output logs for debugging
+    - name: Display application logs
+      shell: tail -n 50 /opt/spring-petclinic/app.log
+      register: app_logs
+      
+    - name: Show application logs
+      debug:
+        var: app_logs.stdout_lines
 
 - name: Deploy Docker and Jenkins Container
   hosts: jenkins_vm
