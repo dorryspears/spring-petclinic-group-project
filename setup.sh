@@ -35,14 +35,22 @@ docker network rm network
 docker network create network
 
 # Step 5: Run docker-compose:: (1) spins up jenkins
-#docker run -d --name jenkins --network network -p 8080:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home -v jenkins-data:/jenkins-data -v jenkins-docker-certs:/certs/client my-jenkins && docker logs -f jenkins
+# docker run -d --name jenkins --network network -p 8080:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home -v jenkins-data:/jenkins-data -v jenkins-docker-certs:/certs/client my-jenkins && docker logs -f jenkins
 cd "$ROOT_PWD"
 cd jenkins/
+# docker build -t my-jenkins .
+docker pull --platform linux/arm64 rspearscmu/devops-final:jenkins
+# rename to my-jenkins
+docker tag rspearscmu/devops-final:jenkins my-jenkins
+
 docker compose --verbose up --build
 docker compose --verbose up -d # runs on detached mode
 # docker compose logs -f  # follow logs
 
 
+
+# Perform clean up
+# docker compose --verbose down
 
 
 
