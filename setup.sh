@@ -12,6 +12,23 @@ gdown 1SCn5TG1KIn2Za0plufOoh4FnknzUDdp6
 echo "------- unzipping devops file ---------"
 unzip final_devops.zip
 
+echo "---- Installing all other dependencies---"
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \\
+    apt-get update && \\
+    apt-get install -y \\
+    openjdk-17-jdk \\
+    sshpass \\
+    ansible \\
+    apt-transport-https \\
+    ca-certificates \\
+    curl \\
+    software-properties-common \\
+    lsb-release \\
+    gnupg \\
+    nodejs && \\
+    apt-get clean && \\
+    rm -rf /var/lib/apt/lists/*
+
 echo "------- moving all tar files to final_devops ---------"
 # move all tar files from final_devops folder into current backup
 mv final_devops/* .
