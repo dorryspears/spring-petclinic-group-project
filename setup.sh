@@ -57,10 +57,12 @@ if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
     docker pull --platform linux/arm64 rspearscmu/devops-final:jenkins
     # rename to my-jenkins
     docker tag rspearscmu/devops-final:jenkins my-jenkins
+    DOCKER_ARCH="arm64"
 elif [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
     echo "Building for x86_64/AMD64 architecture..."
     JAVA_HOME_PATH="/usr/lib/jvm/java-17-openjdk-amd64"
     docker build -t my-jenkins -f Dockerfile.intel .
+    DOCKER_ARCH="amd64"
 else
     echo "Unsupported architecture: $ARCH"
     exit 1
