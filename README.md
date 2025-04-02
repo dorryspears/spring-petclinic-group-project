@@ -112,7 +112,7 @@ Note to TAs: `OWASP ZAP` has its own script integrated within the Jenkins pipeli
 ```bash
 # OWASP ZAP command line to generate the output artifact at
 # the end of the jenkins pipeline
-docker run --rm --network jenkins -t ghcr.io/zaproxy/zaproxy:stable     zap-baseline.py -t http://192.168.64.3:8080 -I > zap-results.txt
+docker run --rm --network jenkins -t ghcr.io/zaproxy/zaproxy:stable     zap-baseline.py -t https://192.168.64.3:8080 -I > zap-results.txt
 ```
 
 ----
