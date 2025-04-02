@@ -118,6 +118,7 @@ chmod +x clean_up.sh
 **Details of setup.sh**
 ```bash
 
+
 ```
 
 
