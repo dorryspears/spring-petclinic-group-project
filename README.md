@@ -37,7 +37,8 @@ Note to TAs:
 ```
 Provisioning_Scripts_And_Configuration/
 ├── ansible/                        # Infrastructure automation (Ansible playbooks, roles, inventory)
-│   └── inventory.yml               # Ansible inventory script
+│   └── deploy.yml                  # Ansible deploy script
+│   └── inventory.ini               # Ansible inventory script
 ├── jenkins/                        # Jenkins configuration, jobs, pipelines
 │   ├── docker-compose.yml          # Script to hook up Jenkins + Grafana + Prometheus + Sonarqube
 │   ├── Dockerfile                  # Dockerfile to setup Jenkins image for Arms64 Arch
@@ -51,7 +52,6 @@ Provisioning_Scripts_And_Configuration/
 │   ├── sonarqube_extensions.tar    # SonarQube plugins/extensions
 │   └── sonarqube_logs.tar          # SonarQube logs
 ├── clean_up.sh                     # Shell script to tear down or clean resources
-├── deploy.yml                      # Deployment script to Deploy Spring PetClinic Without Docker
 ├── output.txt                      # Consolidated commands output log file (combined stdout/stderr)
 └── setup.sh                        # Shell script to provision or bootstrap services
 ```
